@@ -1,0 +1,23 @@
+{
+  "name": "shopin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@kadenceproject/kadence": "^5.0.4",
+    "body-parser": "^1.19.0",
+    "bunyan": "^1.8.12",
+    "cors": "^2.8.5",
+    "encoding-down": "^6.3.0",
+    "eth-crypto": "^1.5.0",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "levelup": "^4.3.2",
+    "memdown": "^5.1.0"
+  }
+}
