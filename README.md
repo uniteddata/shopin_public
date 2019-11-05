@@ -13,7 +13,7 @@ Whitepaper link: https://shopin.docsend.com/view/6i9nhpz
 
 **ShopChain DLT (Distributed Ledger Technology)** is a permissioned, federated network consortium with superior throughput and security, consisting of known staked participants. 
 
-ShopChain DLT uses a ground-breaking arhcitecture combining DHT (Distributed Hash Tables, https://en.wikipedia.org/wiki/Distributed_hash_table) and consensus nodes (https://medium.com/agorablockchain/what-are-consensus-nodes-and-how-do-they-work-73703f92b941).
+ShopChain DLT uses a ground-breaking architecture combining DHT (Distributed Hash Tables, https://en.wikipedia.org/wiki/Distributed_hash_table) and consensus nodes (https://medium.com/agorablockchain/what-are-consensus-nodes-and-how-do-they-work-73703f92b941).
 
 Among other innovations, ShopChain DLT leverages BLS signatures to achieve throughput beyond Bitcoin and Ethereum. The BLS signature is an implementation of a digital signature scheme ideated by Boneh, Lynn and Shacham (2001, https://www.iacr.org/archive/asiacrypt2001/22480516.pdf). BLS signatures have efficient computability and non-degeneracy, which means they are easy to use and difficult to tamper with, therefore secure. 
 
