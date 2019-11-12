@@ -31,8 +31,8 @@ In order for this process to be carried out, nodes engage in a Distributed Key G
 * Created Kademlia node using kadence library
 * Connected two nodes via Join method
 * Added express server to create an API
-* Put static first node's contact in Config file
-* Stored a list of static wallets using IterativeStore method of kadence
+* Put a static primary node's contact in the config file
+* Stored a list of static wallets using the IteractiveStore method of kadence
 * Created an API to get wallets stored on node
 * Added Eth-Crypto library to generate identity and addresses
 * Added custom plugin called sendNeighborEcho
