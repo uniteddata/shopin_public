@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@kadenceproject/kadence": "^5.0.4",
     "body-parser": "^1.19.0",
     "bunyan": "^1.8.12",
     "cors": "^2.8.5",

@@ -29,10 +29,10 @@ In order for this process to be carried out, nodes engage in a Distributed Key G
 
 * Added kadence library
 * Created Kademlia node using kadence library
-* Connected Two nodes via Join method
-* Added Express server to create an API
+* Connected two nodes via Join method
+* Added express server to create an API
 * Put static first node's contact in Config file
-* Store List of static wallets using IterativeStore method of kadence
+* Stored a list of static wallets using IterativeStore method of kadence
 * Created an API to get wallets stored on node
 * Added Eth-Crypto library to generate identity and addresses
 * Added custom plugin called sendNeighborEcho
@@ -40,5 +40,19 @@ In order for this process to be carried out, nodes engage in a Distributed Key G
 * First node will store the contact of incoming node to its routing table
 
 
-## Update 0.2: (coming soon)
+## Update 0.2: Procedure to onboard new nodes and to read IP addresses dynamically
+
+* Added a CONTACT_LIST remote procedure call (RPC) method
+* New node procedures:
+  * When a new node pings a primary node, the primary node sends the list of contacts in its routing table
+  * The new node stores the list of contacts to its routing table so that it has the latest nodes of the network
+  * The new node will not save its own contact to routing table
+* Improvements to the routing table file inside the kadence library to optimize the hops per lookup
+* Implemented changes in allBuckets() method of the routing table component to refresh a wider pool of nodes
+* When nodes are connecting, the list of contacts is added to the routing table
+* If a CONTACT_LIST is sent to a primary node, the node will store it in its routing table, and if the CONTACT_LIST is sent to a non-primary node, the node will then just print it in console
+* Upgraded the static local IP address by adding the command "hostname -i > ip.txt" in order to store the private IP of the machine to the ip.txt file, thus the private IP is read dynamically from the file
+
+
+## Update 0.3: (coming soon)
 

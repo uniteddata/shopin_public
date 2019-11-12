@@ -1,0 +1,21 @@
+{
+  "opts": {
+    "template": "node_modules/ink-docstrap/template"
+  },
+  "templates": {
+    "systemName": "Granax",
+    "copyright":  "Copyright 2017 Gordon Hall",
+    "includeDate": false,
+    "navType": "vertical",
+    "logoFile": "img/granax.png",
+    "theme": "granax",
+    "linenums": false,
+    "collapseSymbols": false,
+    "inverseNav": false,
+    "outputSourceFiles": true,
+    "outputSourcePath": true,
+    "dateFormat": "",
+    "sort": "longname",
+    "syntaxTheme": "default"
+  }
+}
