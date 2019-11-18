@@ -1,0 +1,34 @@
+FROM node:8
+
+# working directory
+ WORKDIR /app
+
+# copy package.json
+COPY ./package.json ./
+
+# install packages
+RUN npm install
+
+
+ENV API_PORT=4001
+ENV PORT=4002
+ENV PORT_OF_PRIMARY_NODE=4002
+ENV FROM_LOCAL=true
+ENV HOSTNAME_OF_PRIMARY_NODE=primary.node
+ENV IDENTITY_OF_PRIMARY_NODE=2b4d287c85c80019babd70f664b1be987c55e25c
+# COPY envWrapper .
+
+# RUN chmod 755 ./envwrapper
+# CMD ./envwrapper IP
+# RUN wget http://ipecho.net/plain -O - -q > ip.txt
+RUN wget hostname -i > ip.txt
+
+# copy source code to current directory
+COPY . ./
+
+# Expose public port
+EXPOSE 4002:4002/udp
+EXPOSE 4001:4001
+
+# run nodemon
+CMD ["npm", "start"]

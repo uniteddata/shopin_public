@@ -1,0 +1,63 @@
+{
+  "_from": "@deadcanaries/hsv3@^1.1.5",
+  "_id": "@deadcanaries/hsv3@1.1.5",
+  "_inBundle": false,
+  "_integrity": "sha512-8pNW9lSjciznpb0pJrjmoy9B58ZDUsYZXwbOZRqNzr5jjcXZ9Wf+GFskC9bDmmlUvC2vh01zKyDAruRI10oSRw==",
+  "_location": "/@deadcanaries/hsv3",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "@deadcanaries/hsv3@^1.1.5",
+    "name": "@deadcanaries/hsv3",
+    "escapedName": "@deadcanaries%2fhsv3",
+    "scope": "@deadcanaries",
+    "rawSpec": "^1.1.5",
+    "saveSpec": null,
+    "fetchSpec": "^1.1.5"
+  },
+  "_requiredBy": [
+    "/@deadcanaries/kadence"
+  ],
+  "_resolved": "https://registry.npmjs.org/@deadcanaries/hsv3/-/hsv3-1.1.5.tgz",
+  "_shasum": "dfaae0d8af494fab2a7413519043798c5090ee43",
+  "_spec": "@deadcanaries/hsv3@^1.1.5",
+  "_where": "/home/adminpc/Downloads/shopin/7/node_modules/@deadcanaries/kadence",
+  "author": {
+    "name": "Gordyn Hall",
+    "email": "gordyn@deadcanaries.org"
+  },
+  "bin": {
+    "hsv3": "cli.js"
+  },
+  "bugs": {
+    "url": "https://gitlab.com/deadcanaries/hsv3/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "@deadcanaries/granax": "^3.2.0",
+    "commander": "^2.11.0",
+    "mkdirp": "^0.5.1"
+  },
+  "deprecated": false,
+  "description": "convenience wrapper for establishing version 3 tor hidden services",
+  "homepage": "https://gitlab.com/deadcanaries/hsv3#readme",
+  "keywords": [
+    "tor",
+    "hidden",
+    "service",
+    "version",
+    "3"
+  ],
+  "license": "AGPL-3.0",
+  "main": "index.js",
+  "name": "@deadcanaries/hsv3",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/deadcanaries/hsv3.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.1.5"
+}

@@ -1,0 +1,880 @@
+version: '2'
+services:
+    primary.node:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_PRIMARY : "true"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4001"
+        BALANCE: 10
+      ports:
+        - "4001:4001"
+        - "8501:8501/udp"
+    regular.node.first:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_MASTER: "true"
+        PORT : "8502"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4002"
+        BALANCE: 10
+      depends_on:
+      - "primary.node"
+      ports:
+        - "4002:4002"
+        - "8502:8502/udp"
+    regular.node.second:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_MASTER: "false"
+        PORT : "8503"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4003"
+        BALANCE: 0
+      depends_on:
+      - "primary.node"
+      - "regular.node.first" 
+      ports:
+        - "4003:4003"
+        - "8503:8503/udp"
+    regular.node.third:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_MASTER: "false"
+        PORT : "8504"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4004"
+        BALANCE: 10
+      depends_on:
+      - "primary.node"
+      - "regular.node.first"
+      - "regular.node.second"
+      ports:
+        - "4004:4004"
+        - "8504:8504/udp"
+    regular.node.fourth:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_MASTER: "false"
+        PORT : "8505"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4005"
+        BALANCE: 10
+      depends_on:
+      - "primary.node"
+      - "regular.node.first"
+      - "regular.node.second"
+      - "regular.node.third"
+      ports:
+        - "4005:4005"
+        - "8505:8505/udp"
+    regular.node.fifth:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_MASTER: "false"
+        PORT : "8506"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4006"
+        BALANCE: 10
+      depends_on:
+      - "primary.node"
+      - "regular.node.first"
+      - "regular.node.second"
+      - "regular.node.third"
+      - "regular.node.fourth"
+      ports:
+        - "4006:4006"
+        - "8506:8506/udp"
+    # regular.node.sixth:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8507"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4007"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   ports:
+    #     - "4007:4007"
+    #     - "8507:8507/udp"
+    # regular.node.seventh:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8508"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4008"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   ports:
+    #     - "4008:4008"
+    #     - "8508:8508/udp"
+    # regular.node.eighth:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8509"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4009"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   ports:
+    #     - "4009:4009"
+    #     - "8509:8509/udp"
+    # regular.node.nineth:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8510"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4010"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   ports:
+    #     - "4010:4010"
+    #     - "8510:8510/udp"
+    # regular.node.tenth:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8511"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4011"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   ports:
+    #     - "4011:4011"
+    #     - "8511:8511/udp"
+    # regular.node.oneone:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8512"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4012"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   ports:
+    #     - "4012:4012"
+    #     - "8512:8512/udp"
+    # regular.node.onetwo:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8513"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4013"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   ports:
+    #     - "4013:4013"
+    #     - "8513:8513/udp"
+    # regular.node.onethree:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8514"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4014"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   ports:
+    #     - "4014:4014"
+    #     - "8514:8514/udp"
+    # regular.node.onefour:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8515"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4015"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   ports:
+    #     - "4015:4015"
+    #     - "8515:8515/udp"
+    # regular.node.onefive:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8516"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4016"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   ports:
+    #     - "4016:4016"
+    #     - "8516:8516/udp"
+    # regular.node.onesix:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8517"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4017"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   ports:
+    #     - "4017:4017"
+    #     - "8517:8517/udp"
+    # regular.node.oneseven:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8518"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4018"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   ports:
+    #     - "4018:4018"
+    #     - "8518:8518/udp"
+    # regular.node.oneeight:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8519"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4019"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   ports:
+    #     - "4019:4019"
+    #     - "8519:8519/udp"
+    # regular.node.onenine:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8520"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4020"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   ports:
+    #     - "4020:4020"
+    #     - "8520:8520/udp"
+    # regular.node.twozero:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8521"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4021"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   ports:
+    #     - "4021:4021"
+    #     - "8521:8521/udp"
+    # regular.node.twoone:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8522"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4022"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   ports:
+    #     - "4022:4022"
+    #     - "8522:8522/udp"
+    # regular.node.twotwo:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8523"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4023"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   ports:
+    #     - "4023:4023"
+    #     - "8523:8523/udp"
+    # regular.node.twothree:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8524"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4024"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   ports:
+    #     - "4024:4024"
+    #     - "8524:8524/udp"
+    # regular.node.twofour:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8525"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4025"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   ports:
+    #     - "4025:4025"
+    #     - "8525:8525/udp"
+    # regular.node.twofive:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8526"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4026"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   - "regular.node.twofour"
+    #   ports:
+    #     - "4026:4026"
+    #     - "8526:8526/udp"
+    # regular.node.twosix:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8527"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4027"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   - "regular.node.twofour"
+    #   - "regular.node.twofive"
+    #   ports:
+    #     - "4027:4027"
+    #     - "8527:8527/udp"
+    # regular.node.twoseven:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8528"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4028"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   - "regular.node.twofour"
+    #   - "regular.node.twofive"
+    #   - "regular.node.twosix"
+    #   ports:
+    #     - "4028:4028"
+    #     - "8528:8528/udp"
+    # regular.node.twoeight:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8529"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4029"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   - "regular.node.twofour"
+    #   - "regular.node.twofive"
+    #   - "regular.node.twosix"
+    #   - "regular.node.twoseven"
+    #   ports:
+    #     - "4029:4029"
+    #     - "8529:8529/udp"
+    # regular.node.twonine:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8530"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4030"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   - "regular.node.twofour"
+    #   - "regular.node.twofive"
+    #   - "regular.node.twosix"
+    #   - "regular.node.twoseven"
+    #   - "regular.node.twoeight"
+    #   ports:
+    #     - "4030:4030"
+    #     - "8530:8530/udp"
+    # regular.node.threezero:
+    #    build: ./DockerfileDev
+    #   command: bash -c "hostname -i > ip.txt && npm start"
+    #   environment:
+    #     IS_MASTER: "false"
+    #     PORT : "8531"
+    #     PORT_OF_PRIMARY_NODE : "8501"
+    #     API_PORT: "4031"
+    #     BALANCE: 10
+    #   depends_on:
+    #   - "primary.node"
+    #   - "regular.node.first"
+    #   - "regular.node.second"
+    #   - "regular.node.third"
+    #   - "regular.node.fourth"
+    #   - "regular.node.fifth"
+    #   - "regular.node.sixth"
+    #   - "regular.node.seventh"
+    #   - "regular.node.eighth"
+    #   - "regular.node.nineth"
+    #   - "regular.node.tenth"
+    #   - "regular.node.oneone"
+    #   - "regular.node.onetwo"
+    #   - "regular.node.onethree"
+    #   - "regular.node.onefour"
+    #   - "regular.node.onefive"
+    #   - "regular.node.onesix"
+    #   - "regular.node.oneseven"
+    #   - "regular.node.oneeight"
+    #   - "regular.node.onenine"
+    #   - "regular.node.twozero"
+    #   - "regular.node.twoone"
+    #   - "regular.node.twotwo"
+    #   - "regular.node.twothree"
+    #   - "regular.node.twofour"
+    #   - "regular.node.twofive"
+    #   - "regular.node.twosix"
+    #   - "regular.node.twoseven"
+    #   - "regular.node.twoeight"
+    #   - "regular.node.twonine"      
+    #   ports:
+    #     - "4031:4031"
+    #     - "8531:8531/udp"

@@ -1,0 +1,104 @@
+{
+  "_from": "@deadcanaries/granax@^3.2.0",
+  "_id": "@deadcanaries/granax@3.2.4",
+  "_inBundle": false,
+  "_integrity": "sha512-2R/OUWeTlx6/2HVAeCtViKZHoQvD8YSKa/sVHc24itbNUGZ/StDbfwVE82/IvqNmY7Du7M1CsCDKYteGxkcNcQ==",
+  "_location": "/@deadcanaries/granax",
+  "_phantomChildren": {
+    "fs.realpath": "1.0.0",
+    "inflight": "1.0.6",
+    "inherits": "2.0.3",
+    "lodash": "4.17.15",
+    "minimatch": "3.0.4",
+    "once": "1.4.0",
+    "path-is-absolute": "1.0.1"
+  },
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "@deadcanaries/granax@^3.2.0",
+    "name": "@deadcanaries/granax",
+    "escapedName": "@deadcanaries%2fgranax",
+    "scope": "@deadcanaries",
+    "rawSpec": "^3.2.0",
+    "saveSpec": null,
+    "fetchSpec": "^3.2.0"
+  },
+  "_requiredBy": [
+    "/@deadcanaries/hsv3"
+  ],
+  "_resolved": "https://registry.npmjs.org/@deadcanaries/granax/-/granax-3.2.4.tgz",
+  "_shasum": "a961c618f2c85b9c412a107bba2225844bbbd6ca",
+  "_spec": "@deadcanaries/granax@^3.2.0",
+  "_where": "/home/adminpc/Downloads/shopin/7/node_modules/@deadcanaries/hsv3",
+  "author": {
+    "name": "Gordyn Hall",
+    "email": "gordyn@deadcanaries.org"
+  },
+  "bugs": {
+    "url": "https://gitlab.com/deadcanaries/granax/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "7zip": "0.0.6",
+    "async": "^2.3.0",
+    "latest-torbrowser-version": "^2.0.2",
+    "merge": "^1.2.1",
+    "mkdirp": "^0.5.1",
+    "mv": "^2.1.1",
+    "ncp": "^2.0.0",
+    "progress": "^2.0.3",
+    "rimraf": "^2.6.3"
+  },
+  "deprecated": false,
+  "description": "complete client implementation of the tor control protocol",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "coveralls": "^3.0.2",
+    "eslint": "^5.15.1",
+    "ink-docstrap": "git+https://gitlab.com/deadcanaries/docstrap.git",
+    "istanbul": "^0.4.5",
+    "jsdoc": "^3.4.3",
+    "mocha": "^5.2.0",
+    "proxyquire": "^1.7.11",
+    "sinon": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=8.9.0"
+  },
+  "homepage": "https://gitlab.com/deadcanaries/granax#readme",
+  "keywords": [
+    "tor",
+    "onion",
+    "control",
+    "protocol",
+    "hidden",
+    "service",
+    "anonymous",
+    "dark",
+    "net",
+    "deep",
+    "web",
+    "stem"
+  ],
+  "license": "AGPL-3.0",
+  "main": "index.js",
+  "name": "@deadcanaries/granax",
+  "optionalDependencies": {
+    "7zip": "0.0.6",
+    "ncp": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/deadcanaries/granax.git"
+  },
+  "scripts": {
+    "coverage": "istanbul cover _mocha -- --recursive",
+    "generate-docs": "mkdir -p ./public && rm -r ./public && jsdoc index.js lib -r -R README.md -u ./doc -c .jsdoc.json --verbose -d ./public",
+    "linter": "eslint index.js lib test",
+    "postinstall": "node script/download-tbb.js",
+    "test": "npm run test-suite && npm run linter",
+    "test-suite": "mocha test/** --recursive"
+  },
+  "version": "3.2.4"
+}

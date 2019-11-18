@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js"
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@deadcanaries/kadence": "^6.1.6",
+    "async": "^3.1.0",
     "body-parser": "^1.19.0",
     "bunyan": "^1.8.12",
     "cors": "^2.8.5",
@@ -17,7 +19,11 @@
     "eth-crypto": "^1.5.0",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
+    "ip": "^1.1.5",
+    "knuth-shuffle": "^1.0.8",
     "levelup": "^4.3.2",
-    "memdown": "^5.1.0"
+    "memdown": "^5.1.0",
+    "semver": "^6.3.0",
+    "socket.io": "^2.3.0"
   }
 }
