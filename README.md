@@ -54,5 +54,17 @@ In order for this process to be carried out, nodes engage in a Distributed Key G
 * Upgraded the static local IP address by adding the command "hostname -i > ip.txt" in order to store the private IP of the machine to the ip.txt file, thus the private IP is read dynamically from the file
 
 
-## Update 0.3: (coming soon)
+## Update 0.3: Initial multi-node communication with docker container for nodes
+
+* Changed file structure
+* Added support for websocket
+* Changed the API so that a single controller can be used in both the API and the socket
+* Created a dockerfile
+* Added support to run application via the docker container
+* Enhanced the dockerfile to build a container so a node can be run out in a docker container
+* Added docker-compose.yaml
+* Created 6 nodes using the docker-compose file and achieved communication among the nodes
+
+
+## Update 0.4: (coming soon)
 
