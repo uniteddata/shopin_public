@@ -107,7 +107,7 @@ In order for this process to be carried out, nodes engage in a Distributed Key G
 * The transaction button shows in real time the log of executed transactions in transaction logs page
 
 
-## Update 0.9: Additional infrastructure and funcitonality: DKG keys nad BLS signatures
+## Update 0.9: Additional infrastructure and funcitonality: DKG keys and BLS signatures
 
 * Make an API to generate DKG keys
 * Store DKG keys on each node

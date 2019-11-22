@@ -7,7 +7,20 @@ FROM node:8
 COPY ./package.json ./
 
 # install packages
-RUN npm install
+RUN yarn install
+
+# In util.js, we have created one method getContactInfo. Earlier that was method getContactURL
+# which was giving contact's URL. but we need whole contact object.
+COPY ./src/libraryFiles/utils.js ./node_modules/@kadenceproject/kadence/lib
+
+# We called getContactInfo method from util.js inside this file
+# getBootstrapCandidates was giving us url of contact but we have needed whole contact object.
+COPY ./src/libraryFiles/plugin-rolodex.js ./node_modules/@kadenceproject/kadence/lib
+
+# In bucket.js, we have created one method which will return all buckets of node's routing table
+COPY ./src/libraryFiles/bucket.js ./node_modules/@kadenceproject/kadence/lib
+
+
 
 
 ENV API_PORT=4001
@@ -22,6 +35,9 @@ ENV IDENTITY_OF_PRIMARY_NODE=2b4d287c85c80019babd70f664b1be987c55e25c
 # CMD ./envwrapper IP
 # RUN wget http://ipecho.net/plain -O - -q > ip.txt
 RUN wget hostname -i > ip.txt
+
+# Here, we have that method. We are getting list of contacts in array now.
+COPY ./src/libraryFiles/routing-table.js ./node_modules/@kadenceproject/kadence/lib
 
 # copy source code to current directory
 COPY . ./

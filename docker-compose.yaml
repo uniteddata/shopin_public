@@ -103,27 +103,31 @@ services:
       ports:
         - "4006:4006"
         - "8506:8506/udp"
-    # regular.node.sixth:
-    #    build: ./DockerfileDev
-    #   command: bash -c "hostname -i > ip.txt && npm start"
-    #   environment:
-    #     IS_MASTER: "false"
-    #     PORT : "8507"
-    #     PORT_OF_PRIMARY_NODE : "8501"
-    #     API_PORT: "4007"
-    #     BALANCE: 10
-    #   depends_on:
-    #   - "primary.node"
-    #   - "regular.node.first"
-    #   - "regular.node.second"
-    #   - "regular.node.third"
-    #   - "regular.node.fourth"
-    #   - "regular.node.fifth"
-    #   ports:
-    #     - "4007:4007"
-    #     - "8507:8507/udp"
+    regular.node.sixth:
+      build:
+        context: .
+        dockerfile: ./DockerfileDev
+      command: bash -c "hostname -i > ip.txt && npm start"
+      environment:
+        IS_MASTER: "false"
+        PORT : "8507"
+        PORT_OF_PRIMARY_NODE : "8501"
+        API_PORT: "4007"
+        BALANCE: 10
+      depends_on:
+      - "primary.node"
+      - "regular.node.first"
+      - "regular.node.second"
+      - "regular.node.third"
+      - "regular.node.fourth"
+      - "regular.node.fifth"
+      ports:
+        - "4007:4007"
+        - "8507:8507/udp"
     # regular.node.seventh:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -143,7 +147,9 @@ services:
     #     - "4008:4008"
     #     - "8508:8508/udp"
     # regular.node.eighth:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -164,7 +170,9 @@ services:
     #     - "4009:4009"
     #     - "8509:8509/udp"
     # regular.node.nineth:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -186,7 +194,9 @@ services:
     #     - "4010:4010"
     #     - "8510:8510/udp"
     # regular.node.tenth:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -209,7 +219,9 @@ services:
     #     - "4011:4011"
     #     - "8511:8511/udp"
     # regular.node.oneone:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -233,7 +245,9 @@ services:
     #     - "4012:4012"
     #     - "8512:8512/udp"
     # regular.node.onetwo:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -258,7 +272,9 @@ services:
     #     - "4013:4013"
     #     - "8513:8513/udp"
     # regular.node.onethree:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -284,7 +300,9 @@ services:
     #     - "4014:4014"
     #     - "8514:8514/udp"
     # regular.node.onefour:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -311,7 +329,9 @@ services:
     #     - "4015:4015"
     #     - "8515:8515/udp"
     # regular.node.onefive:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -339,7 +359,9 @@ services:
     #     - "4016:4016"
     #     - "8516:8516/udp"
     # regular.node.onesix:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -368,7 +390,9 @@ services:
     #     - "4017:4017"
     #     - "8517:8517/udp"
     # regular.node.oneseven:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -398,7 +422,9 @@ services:
     #     - "4018:4018"
     #     - "8518:8518/udp"
     # regular.node.oneeight:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -429,7 +455,9 @@ services:
     #     - "4019:4019"
     #     - "8519:8519/udp"
     # regular.node.onenine:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -461,7 +489,9 @@ services:
     #     - "4020:4020"
     #     - "8520:8520/udp"
     # regular.node.twozero:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -494,7 +524,9 @@ services:
     #     - "4021:4021"
     #     - "8521:8521/udp"
     # regular.node.twoone:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -528,7 +560,9 @@ services:
     #     - "4022:4022"
     #     - "8522:8522/udp"
     # regular.node.twotwo:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -563,7 +597,9 @@ services:
     #     - "4023:4023"
     #     - "8523:8523/udp"
     # regular.node.twothree:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -599,7 +635,9 @@ services:
     #     - "4024:4024"
     #     - "8524:8524/udp"
     # regular.node.twofour:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -636,7 +674,9 @@ services:
     #     - "4025:4025"
     #     - "8525:8525/udp"
     # regular.node.twofive:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -674,7 +714,9 @@ services:
     #     - "4026:4026"
     #     - "8526:8526/udp"
     # regular.node.twosix:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -713,7 +755,9 @@ services:
     #     - "4027:4027"
     #     - "8527:8527/udp"
     # regular.node.twoseven:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -753,7 +797,9 @@ services:
     #     - "4028:4028"
     #     - "8528:8528/udp"
     # regular.node.twoeight:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -794,7 +840,9 @@ services:
     #     - "4029:4029"
     #     - "8529:8529/udp"
     # regular.node.twonine:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"
@@ -836,7 +884,9 @@ services:
     #     - "4030:4030"
     #     - "8530:8530/udp"
     # regular.node.threezero:
-    #    build: ./DockerfileDev
+    #   build:
+    #     context: .
+    #     dockerfile: ./DockerfileDev
     #   command: bash -c "hostname -i > ip.txt && npm start"
     #   environment:
     #     IS_MASTER: "false"

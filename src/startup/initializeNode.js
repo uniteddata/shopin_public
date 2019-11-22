@@ -1,11 +1,3 @@
-/* 
-process.argv[3] -> true/false -> shows the node is first node or not
-process.argv[2] -> shows the port of current node
-process.argv[4] -> shows the port of first node
-*/
-
-
-
 const kadence = require("../../@deadcanaries/kadence/index.js");
 const levelup = require("levelup");
 const encoding = require("encoding-down");
@@ -14,17 +6,20 @@ const bunyan = require("bunyan");
 const config = require("../config/config");
 const fs = require("fs")
 const EthCrypto = require("eth-crypto");
+const updateContactList = require("./updateContacts");
+const bls = require("../bls/bls");
+
 
 const storage = levelup(encoding(memdown()));
 const logger = bunyan.createLogger({ name: "main" });
 const transport = new kadence.UDPTransport();
 
 const ethIdentitiy = EthCrypto.createIdentity();
-const id = process.env.IS_PRIMARY
+const id = process.argv[3] == "true"
   ? config.primaryNodeAddress
   : ethIdentitiy.address.substring(2);
 
-console.log(id, process.env.IS_PRIMARY);
+console.log(id, typeof (process.argv[3]));
 
 // FILE READING
 
@@ -34,18 +29,18 @@ function initializeNode() {
       function startWithThis() {
         let filename = "./ip.txt";
         let ipAddress;
-        return fs.readFile(filename, "utf8", function(err, data) {
+        return fs.readFile(filename, "utf8", function (err, data) {
           if (err) throw err;
           ipAddress = data.replace(/(\r\n\t|\n|\r\t)/gm, "");
           console.log(ipAddress);
-          if (!process.env.IS_PRIMARY) {
+          if (process.argv[3] == 'false') {
             console.log(
               "Master node: " +
-                process.env.IS_MASTER +
-                "\nPrimary Node's Port:" +
-                process.env.PORT_OF_PRIMARY_NODE +
-                "\nThis node's port: " +
-                process.env.PORT
+              process.argv[6] +
+              "\nPrimary Node's Port:" +
+              process.argv[4] +
+              "\nThis node's port: " +
+              process.env.PORT
             );
           }
 
@@ -53,18 +48,20 @@ function initializeNode() {
             identity: id,
             contact: {
               hostname: ipAddress,
-              port: process.env.IS_PRIMARY
-                ? process.env.PORT_OF_PRIMARY_NODE
-                : process.env.PORT,
+              port: process.argv[3] == "true"
+                ? process.argv[4]
+                : process.argv[2],
               publicKey: ethIdentitiy.publicKey,
-              isMaster: process.env.IS_MASTER ? process.env.IS_MASTER : false,
-              isPrimary: process.env.IS_PRIMARY
-                ? process.env.IS_PRIMARY
+              isMaster: process.argv[6] == "true" ? process.argv[6] : false,
+              isPrimary: process.argv[3] == "true"
+                ? process.argv[3]
                 : false,
-              balance: process.env.BALANCE,
+              balance: process.argv[5],
               clients: [],
               failTransactions: [],
-              successfulTransactions: []
+              successfulTransactions: [],
+              msk: {},
+              mpk: {},
             },
             transport: transport,
             storage: storage,
@@ -74,7 +71,7 @@ function initializeNode() {
           console.log(
             node.contact.port,
             node.contact.hostname,
-            process.env.API_PORT
+            process.argv[3]
           );
 
           node.listen(node.contact.port);
@@ -82,17 +79,18 @@ function initializeNode() {
           node.quasar = node.plugin(kadence.quasar());
 
           let _walletSeeds = JSON.parse(
-            fs.readFileSync(process.cwd() + "/src/config/seed.json", "utf8")
+            fs.readFileSync(process.cwd() + (process.cwd().includes("/unity-node-repo") ? '' : "/unity-node-repo/") + "/src/config/seed.json", "utf8")
           );
 
           node.iterativeStore(
             ethIdentitiy.address.substring(2),
             _walletSeeds,
-            function(_err, _data) {
+            function (_err, _data) {
               if (_err) {
-                console.log("wallet data not stored from initialize");
+                // console.log("wallet data not stored from initialize", _err);
+              } else {
+                console.log("wallet data stored from initialize");
               }
-              console.log("wallet data stored from initialize");
             }
           );
 
@@ -100,10 +98,42 @@ function initializeNode() {
           // const plugin = kadence.rolodex("./rolodex")(node);
           // middleware
           node.use((request, response, next) => {
+
+            if (request.method == "AGGREGATE_ALL_SHARES") {
+              console.log(req.params, "signature")
+              response.send("abc")
+            }
+
+
+            if (request.method == "SEND_TRANSACTION_TO_LEADER") {
+              const sk = new bls.SecretKey()
+              sk.deserializeHexStr(node.contact.sk)
+              // console.log(JSON.stringify(req.params))
+
+              const string = request.params.from + " is sending " + request.params.balance + " to " + request.params.to
+              console.log(string)
+
+              const sign = sk.sign(string)
+              // console.log(sk)
+
+
+              // node.quasar.quasarPublish("SEND_DATA_TO_NETWORK", data, (err, del) => { console.log(del.length)});
+              // node.router.allBuckets.forEach((contact) => {
+              node.quasar.quasarPublish("GENERATE_SHARE", string, (err, res) => {
+                console.log(err, res)
+              })
+
+              node.contact.sign = sign.serializeToHexStr()
+
+              // })
+
+
+              // response.send({ sign: sign.serializeToHexStr() })
+            }
             // console.log(request)
-            if (process.env.IS_PRIMARY) {
+            if (process.argv[3] == "true") {
               if (request.method === "FIND_NODE") {
-                node.join([request.identity, request.contact], () => {});
+                node.join([request.identity, request.contact], () => { });
                 // }
               }
             }
@@ -118,14 +148,87 @@ function initializeNode() {
               );
             }
 
+
+
+
+            // if (
+            //   request.method === "PUBLISH" &&
+            //   request.params.topic === "SEND_DATA_TO_NETWORK"
+            // ) {
+            //   // node._updateContact(
+            //   //   request.params.contents.identity,
+            //   //   request.params.contents.contact
+            //   // );
+            //   console.log(request.params, "request.contact.params")
+            // }
+
+
             next();
           });
 
+          node.quasar.quasarSubscribe("GENERATE_SHARE", (req) => {
+
+            if (node.contact.isMaster != "true") {
+              // console.log(req)
+
+              const sk = new bls.SecretKey()
+              sk.deserializeHexStr(node.contact.sk)
+
+              const sig = sk.sign(req)
+              console.log(sig, "In GENERATE_SHARE")
+              console.log("______________________***************************************^%%%%%%%%%%%%%%%%%%%%%%#$$$$$$$$$$$$$$$$$$$$$$$$$^^^^^^^^^^^^^^^^^^")
+
+
+              node.send("AGGREGATE_ALL_SHARES",
+                sig.serializeToHexStr(),
+                [config.primaryNodeAddress, config.contact], (err, response) => {
+                  console.log(err)
+                })
+
+            }
+          })
+
+          node.quasar.quasarSubscribe("SEND_DATA_TO_NETWORK", (data) => {
+            console.log("SEND_DATA_TO_NETWORK")
+            if (data.key == "DKG") {
+              const msk = []
+
+              data.value.forEach((each) => {
+                const sk = new bls.SecretKey()
+                sk.deserializeHexStr(each)
+                msk.push(sk)
+              })
+              const id = new bls.Id()
+              id.setByCSPRNG()
+              let sk = new bls.SecretKey()
+
+              sk.share(msk, id)
+              node.contact.sk = sk.serializeToHexStr()
+              node.contact.blsId = id.serializeToHexStr()
+              console.log(node.contact.sk, "node.contact.sk")
+            }
+
+            // node.send('GENERATE_SHARE', 'hello', (err, res) => console.log('success'))
+          })
+
+          // node.use("GENERATE_SHARE", (req, res, next) => {
+
+          //   console.log(req.params)
+
+          //   const sk = new bls.SecretKey()
+          //   sk.deserializeHexStr(node.contact.sk)
+
+          //   const sig = sk.sign(req.params)
+          //   console.log(sig, "In GENERATE_SHARE")
+          //   // sigVec.push(sig)
+
+          // })
+
           node.use("CONTACT_LIST", (req, res, next) => {
-            if (process.env.IS_PRIMARY) {
+            if (process.argv[3] == "true") {
               let masters = 0;
 
-              logger.info(`Connected  ${node.router.size} peers!`);
+              logger.info(`Connected  ${node.router.size + 1} peers!`);
 
               console.log();
               console.log(
@@ -134,14 +237,14 @@ function initializeNode() {
               console.log("  ");
 
               node.router.allBuckets.length > 0 &&
-              node.router.allBuckets.length > 0
+                node.router.allBuckets.length > 0
                 ? node.router.allBuckets.forEach(val => {
-                    if (val.contact.isMaster === "true") {
-                      masters++;
-                    }
+                  if (val.contact.isMaster === "true") {
+                    masters++;
+                  }
 
-                    // );
-                  })
+                  // );
+                })
                 : "";
               console.log(node.router.allBuckets, masters);
               console.log("  ");
@@ -150,10 +253,10 @@ function initializeNode() {
 
               console.log(
                 "There is " +
-                  masters +
-                  " master nodes in network from " +
-                  node.router.size +
-                  " total nodes."
+                masters +
+                " master nodes in network from " +
+                (node.router.allBuckets.length + 1) +
+                " total nodes."
               );
               node.router.addContactByNodeId(request.contact[1]);
             } else {
@@ -169,22 +272,24 @@ function initializeNode() {
 
               req.params.length > 0
                 ? req.params.forEach(val => {
-                    if (val.contact.isMaster === "true") {
-                      masters++;
-                    }
+                  if (val.contact.isMaster === "true") {
+                    masters++;
+                  }
 
-                    // );
-                  })
+                  // );
+                })
                 : "";
+
+              console.log(node.router.allBuckets, masters);
               console.log("  ");
               console.log("<------------------------------------------------");
               console.log(" ");
               console.log(
                 "There is " +
-                  masters +
-                  " master nodes in network from " +
-                  node.router.size +
-                  " total nodes."
+                masters +
+                " master nodes in network from " +
+                node.router.size +
+                " total nodes."
               );
             }
             next();
@@ -210,38 +315,38 @@ function initializeNode() {
             if (req.params.for) {
               node.router.allBuckets && node.router.allBuckets.length > 0
                 ? node.router.allBuckets.forEach(val => {
-                    if (
-                      val.identity == req.params.receiver.receiverNodeIdentity
-                    ) {
-                      val.contact.clients.length > 0 &&
-                        val.contact.clients.forEach(receiverNode => {
-                          if (req.params.to.address == receiverNode.identity) {
-                            receiverNodeContact = val;
-                            receiverWallet = receiverNode;
-                          }
-                        });
-                    }
+                  if (
+                    val.identity == req.params.receiver.receiverNodeIdentity
+                  ) {
+                    val.contact.clients.length > 0 &&
+                      val.contact.clients.forEach(receiverNode => {
+                        if (req.params.to.address == receiverNode.identity) {
+                          receiverNodeContact = val;
+                          receiverWallet = receiverNode;
+                        }
+                      });
+                  }
 
-                    if (val.identity == req.params.senderIdentity) {
-                      val.contact.clients.length > 0 &&
-                        val.contact.clients.forEach(senderNode => {
-                          if (req.params.from.address == senderNode.identity) {
-                            senderNodeContact = val;
-                            senderClientBalance = senderNode.balance;
-                            senderWallet = senderNode;
-                          }
-                        });
-                    }
+                  if (val.identity == req.params.senderIdentity) {
+                    val.contact.clients.length > 0 &&
+                      val.contact.clients.forEach(senderNode => {
+                        if (req.params.from.address == senderNode.identity) {
+                          senderNodeContact = val;
+                          senderClientBalance = senderNode.balance;
+                          senderWallet = senderNode;
+                        }
+                      });
+                  }
 
-                    //  }
-                  })
+                  //  }
+                })
                 : "";
 
               if (decryptedPayload.message > parseInt(senderClientBalance)) {
-                node.iterativeStore(key, encryptedObject, function(
+                node.iterativeStore(key, encryptedObject, function (
                   err,
                   totalStored
-                ) {});
+                ) { });
 
                 res.send({
                   status: "error",
@@ -291,10 +396,10 @@ function initializeNode() {
                   updateContactList(latestContact, node);
                 });
 
-                node.iterativeStore(key, encryptedObject, function(
+                node.iterativeStore(key, encryptedObject, function (
                   err,
                   totalStored
-                ) {});
+                ) { });
 
                 res.send({
                   status: "success",
@@ -305,60 +410,60 @@ function initializeNode() {
             } else {
               node.router.allBuckets && node.router.allBuckets.length > 0
                 ? node.router.allBuckets.forEach(val => {
-                    // searching exact node from routing table
-                    if (req.params.sender == val.identity.toString("hex")) {
-                      if (
-                        decryptedPayload.message > parseInt(val.contact.balance)
+                  // searching exact node from routing table
+                  if (req.params.sender == val.identity.toString("hex")) {
+                    if (
+                      decryptedPayload.message > parseInt(val.contact.balance)
+                    ) {
+                      node.iterativeStore(key, encryptedObject, function (
+                        err,
+                        totalStored
+                      ) { });
+
+                      res.send({
+                        status: "error",
+                        message:
+                          "requested client doesn't have enough balance",
+                        key
+                      });
+                    } else {
+                      val.contact.balance =
+                        Number(val.contact.balance) -
+                        Number(decryptedPayload.message);
+                      req.contact[1].balance =
+                        Number(val.contact.balance) +
+                        Number(decryptedPayload.message);
+
+                      let updateContacts = [
+                        {
+                          contact: val.contact,
+                          identity: val.identity
+                        },
+                        {
+                          contact: req.contact[1],
+                          identity: req.contact[0]
+                        }
+                      ];
+
+                      updateContacts.forEach(latestContact => {
+                        updateContactList(latestContact, node);
+                      });
+
+                      node.iterativeStore(key, encryptedObject, function (
+                        err,
+                        totalStored
                       ) {
-                        node.iterativeStore(key, encryptedObject, function(
-                          err,
-                          totalStored
-                        ) {});
+                        console.log(totalStored, "data stored");
+                      });
 
-                        res.send({
-                          status: "error",
-                          message:
-                            "requested client doesn't have enough balance",
-                          key
-                        });
-                      } else {
-                        val.contact.balance =
-                          Number(val.contact.balance) -
-                          Number(decryptedPayload.message);
-                        req.contact[1].balance =
-                          Number(val.contact.balance) +
-                          Number(decryptedPayload.message);
-
-                        let updateContacts = [
-                          {
-                            contact: val.contact,
-                            identity: val.identity
-                          },
-                          {
-                            contact: req.contact[1],
-                            identity: req.contact[0]
-                          }
-                        ];
-
-                        updateContacts.forEach(latestContact => {
-                          updateContactList(latestContact, node);
-                        });
-
-                        node.iterativeStore(key, encryptedObject, function(
-                          err,
-                          totalStored
-                        ) {
-                          console.log(totalStored, "data stored");
-                        });
-
-                        res.send({
-                          status: "success",
-                          message: "Transaction Succeed",
-                          key
-                        });
-                      }
+                      res.send({
+                        status: "success",
+                        message: "Transaction Succeed",
+                        key
+                      });
                     }
-                  })
+                  }
+                })
                 : "";
             }
 
@@ -397,16 +502,16 @@ function initializeNode() {
             let masters = [];
             node.router.allBuckets && node.router.allBuckets.length > 0
               ? node.router.allBuckets.forEach(val => {
-                  if (val.contact.isMaster === "true") {
-                    masters.push(val);
-                  }
-                })
+                if (val.contact.isMaster === "true") {
+                  masters.push(val);
+                }
+              })
               : "";
 
             if (!masters.length) {
               let key = kadence.utils.getRandomKeyString();
 
-              node.iterativeStore(key, encryptedObject, function(
+              node.iterativeStore(key, encryptedObject, function (
                 err,
                 totalStored
               ) {
@@ -480,9 +585,9 @@ function initializeNode() {
 
             console.log(
               "Got message : " +
-                req.params.message +
-                " \nfrom : " +
-                req.contact[0]
+              req.params.message +
+              " \nfrom : " +
+              req.contact[0]
             );
             console.log("  ");
             console.log("<------------------------------------------------");
@@ -495,7 +600,9 @@ function initializeNode() {
           };
 
           node.use("STORE", (request, response, next) => {
-            // console.log(request, "store");
+
+
+            console.log(request, "store");
             // let [key, entry] = request.params;
             // let hash = crypto
             //   .createHash("rmd160")
@@ -507,7 +614,8 @@ function initializeNode() {
             // }
           });
 
-          if (!process.env.IS_PRIMARY) {
+          if (process.argv[3] == "false") {
+            console.log(config.primaryNodeAddress, config.contact, "config.primaryNodeAddress, config.contact")
             node.join([config.primaryNodeAddress, config.contact], () => {
               node.sendNeighborEcho(
                 [config.primaryNodeAddress, config.contact],
@@ -521,19 +629,22 @@ function initializeNode() {
                       "CONTACT_LIST",
                       res,
                       [config.primaryNodeAddress, config.contact],
-                      () => {}
+                      () => { }
                     );
                     node.send(
                       "CONTACT_LIST",
                       res,
                       [nodesToSave[0], nodesToSave[1]],
-                      () => {}
+                      () => { }
                     );
                   });
                 }
               );
             });
           }
+
+
+
           resolve({
             node,
             ethIdentitiy,
@@ -541,10 +652,9 @@ function initializeNode() {
           });
         });
       },
-      process.env.IS_PRIMARY ? 500 : 20000
+      process.argv[3] == "true" ? 500 : 2000
     );
   });
 }
 
 module.exports = initializeNode;
-
