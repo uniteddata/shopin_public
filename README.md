@@ -1,6 +1,3 @@
-# ShopChain
-
-
 ## License addendum
 This project is released under the GNU GPL-3.0 license.
 Check out the [LICENSE](LICENSE) file for more information.
@@ -8,6 +5,9 @@ Check out the [LICENSE](LICENSE) file for more information.
 The included @deadcanaries/kadence originates from [KADENCE][kadence].
 
 [kadence]: https://gitlab.com/deadcanaries/kadence
+
+
+# ShopChain
 
 **An approach to create a new layer of decentralized infrastructure that provides value to retailers by assigning consumers ownership of their data.**
 
