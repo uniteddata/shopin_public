@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Granax Source: index.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+	<script src="scripts/highlight.min.js"></script>
+
+	<link type="text/css" rel="stylesheet" href="styles/site.granax.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" style="background-image:url(img/granax.png)"  href="index.html">Granax</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-granax.html">granax</a></li><li><a href="module-granax_commands.html">granax/commands</a></li><li><a href="module-granax_replies.html">granax/replies</a></li><li><a href="module-granax_torrc.html">granax/torrc</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="TorController.html">TorController</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="TorController.html#event:close">TorController#event:close</a></li><li><a href="TorController.html#event:error">TorController#event:error</a></li><li><a href="TorController.html#event:ready">TorController#event:ready</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-getting-started.html">Getting Started</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+		<div class="col-sm-3 col-md-4">
+            <form class="navbar-form" role="search">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                    <div class="input-group-btn">
+                        <button class="btn btn-primary" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			
+
+		<h1 class="page-title">Source: index.js</h1>
+    
+<section>
+    <article>
+        <pre
+            class="sunlight-highlight-javascript ">/**
+ * @module granax
+ * @license AGPL-3.0
+ * @author Gordon Hall &lt;gordonh@member.fsf.org>
+ */
+
+'use strict';
+
+const path = require('path');
+const { spawn, execFileSync } = require('child_process');
+const { platform } = require('os');
+const { Socket } = require('net');
+const { readFileSync } = require('fs');
+
+const BIN_PATH = path.join(__dirname, 'bin');
+const LD_LIBRARY_PATH = path.join(
+  BIN_PATH, 'tor-browser_en-US', 'Browser', 'TorBrowser', 'Tor'
+);
+
+
+/**
+ * Returns a {@link TorController} with automatically constructed socket
+ * to the local Tor bundle executable
+ * @param {object} options
+ * @param {object} torrcOptions
+ * @returns {TorController}
+ */
+module.exports = function(options, torrcOptions) {
+  let socket = new Socket();
+  let controller = new module.exports.TorController(socket, options);
+  let [torrc, datadir] = module.exports.torrc(torrcOptions);
+
+  let exe = path.basename(module.exports.tor(platform()));
+  let tor = path.join(BIN_PATH, 'Tor', exe);
+
+  let args = process.env.GRANAX_TOR_ARGS
+    ? process.env.GRANAX_TOR_ARGS.split(' ')
+    : [];
+  let child = spawn(tor, ['-f', torrc].concat(args), {
+    cwd: BIN_PATH,
+    env: { LD_LIBRARY_PATH: path.join(BIN_PATH, 'Tor') }
+  });
+  let portFileReads = 0;
+
+  controller.process = child; // NB: Expose the tor process to userland
+
+  function connect() {
+    let port = null;
+
+    try {
+      port = parseInt(readFileSync(path.join(
+        datadir,
+        'control-port'
+      )).toString().split(':')[1]);
+    } catch (err) {
+      /* istanbul ignore next */
+      portFileReads++;
+
+      /* istanbul ignore next */
+      if (portFileReads &lt;= 20) {
+        return setTimeout(() => connect(), 1000);
+      } else {
+        return controller.emit('error',
+          new Error('Failed to read control port'));
+      }
+    }
+
+    socket.connect(port, '127.0.0.1');
+  }
+
+  /* istanbul ignore next */
+  process.on('exit', () => child.kill());
+  child.stdout.once('data', () => setTimeout(() => connect(), 1000));
+  child.on('error', (err) => controller.emit('error', err));
+  child.on('exit', (code) => {
+    controller.emit('error', new Error('Tor exited with code ' + code));
+  });
+
+  return controller;
+};
+
+/**
+ * Returns the local path to the tor bundle
+ * @returns {string}
+ */
+module.exports.tor = function(platform) {
+  /* eslint complexity: ["error", 7] */
+  let torpath = null;
+
+  switch (platform) {
+    case 'win32':
+      torpath = path.join(BIN_PATH, 'Browser', 'TorBrowser', 'Tor', 'tor.exe');
+      break;
+    case 'darwin':
+      torpath = path.join(BIN_PATH, '.tbb.app', 'Contents', 'Resources',
+        'TorBrowser', 'Tor', 'tor');
+      break;
+    case 'android':
+    case 'linux':
+      /* istanbul ignore else */
+      if (process.env.GRANAX_USE_SYSTEM_TOR) {
+        // NB: Use the system Tor installation on android and linux
+        try {
+          torpath = execFileSync('which', ['tor']).toString().trim();
+        } catch (err) {
+          /* istanbul ignore next */
+          throw new Error('Tor is not installed');
+        }
+      } else {
+        torpath = path.join(LD_LIBRARY_PATH, 'tor');
+      }
+      break;
+    default:
+      throw new Error(`Unsupported platform "${platform}"`);
+  }
+
+  return torpath;
+};
+
+/**
+ * {@link TorController}
+ */
+module.exports.TorController = require('./lib/controller');
+
+/**
+ * {@link module:granax/commands}
+ */
+module.exports.commands = require('./lib/commands');
+
+/**
+ * {@link module:granax/replies}
+ */
+module.exports.replies = require('./lib/replies');
+
+/**
+ * {@link module:granax/torrc}
+ */
+module.exports.torrc = require('./lib/torrc');
+</pre>
+    </article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+<div class="modal fade" id="searchResults">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Search results</h4>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2019 Dead Canaries, Inc.
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+<script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	$('pre').each(function(i, block) {
+		hljs.highlightBlock(block);
+	});
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		SearcherDisplay.init();
+	});
+</script>
+
+</body>
+</html>

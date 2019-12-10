@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Granax Index</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+	<script src="scripts/highlight.min.js"></script>
+
+	<link type="text/css" rel="stylesheet" href="styles/site.granax.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" style="background-image:url(img/granax.png)"  href="index.html">Granax</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-granax.html">granax</a></li><li><a href="module-granax_commands.html">granax/commands</a></li><li><a href="module-granax_replies.html">granax/replies</a></li><li><a href="module-granax_torrc.html">granax/torrc</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="TorController.html">TorController</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="TorController.html#event:close">TorController#event:close</a></li><li><a href="TorController.html#event:error">TorController#event:error</a></li><li><a href="TorController.html#event:ready">TorController#event:ready</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-getting-started.html">Getting Started</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+		<div class="col-sm-3 col-md-4">
+            <form class="navbar-form" role="search">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                    <div class="input-group-btn">
+                        <button class="btn btn-primary" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+
+
+    <section class="readme-section">
+        <article><h1>Granax</h1><p>Complete client implementation of the <a href="https://gitweb.torproject.org/torspec.git/plain/control-spec.txt">Tor Control Protocol</a>. 
+Control a running Tor instance from Node.js!</p>
+<h2>Usage</h2><p>Install via NPM:</p>
+<pre class="prettyprint source"><code>npm install granax --save</code></pre><p>As part of the installation process, Granax will download the Tor Browser 
+Bundle local to itself and use the included Tor executable, however on 
+GNU+Linux, you may opt for Granax to use the system Tor installed using your 
+distribution's package manager by setting <code>GRANAX_USE_SYSTEM_TOR=1</code>. </p>
+<p>You can also tell Granax to install the latest alpha release of Tor instead of 
+the latest stable release, with <code>GRANAX_USE_TOR_ALPHA=1</code>.</p>
+<pre class="prettyprint source lang-js"><code>const tor = require('granax')();
+
+tor.on('ready', function() {
+  tor.createHiddenService('127.0.0.1:8080', (err, result) => {
+    console.info(`Service URL: ${result.serviceId}.onion`);
+    console.info(`Private Key: ${result.privateKey}`);
+  });
+});
+
+tor.on('error', function(err) {
+  console.error(err);
+});</code></pre><h3>Using System Tor Package</h3><p>Make sure that <code>ControlPort=9051</code> (or your preferred port) is set in your 
+<code>torrc</code>, then you may open the control socket and issue commands:</p>
+<pre class="prettyprint source lang-js"><code>const { connect } = require('net');
+const { TorController } = require('granax');
+const tor = new TorController(connect(9051), options);
+
+tor.on('ready', function() {
+  // party!
+});</code></pre><blockquote>
+<p>Note that if using cookie authentication, the Node.js process must have the 
+appropriate privileges to read the cookie file. Usually, this means running 
+as the same user that is running Tor.</p>
+</blockquote>
+<h2>Resources</h2><ul>
+<li><a href="https://gitlab.com/allcomputersarebroken/granax">Granax Source</a></li>
+<li><a href="https://gitlab.com/allcomputersarebroken/granax/tree/master/examples">Granax Examples</a></li>
+<li><a href="https://allcomputersarebroken.gitlab.io/granax">Granax Documentation</a></li>
+<li><a href="https://gitweb.torproject.org/torspec.git/plain/control-spec.txt">Tor Control Specification</a></li>
+<li><a href="https://www.torproject.org/docs/documentation.html.en">Tor Documentation</a></li>
+</ul>
+<h2>License</h2><p>Granax - Complete client implementation of the Tor Control Protocol<br>Copyright (C) 2017 Gordon Hall</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.</p>
+<p>You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p></article>
+    </section>
+
+
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
+</div>
+
+<div class="modal fade" id="searchResults">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Search results</h4>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2019 Dead Canaries, Inc.
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+<script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	$('pre').each(function(i, block) {
+		hljs.highlightBlock(block);
+	});
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		SearcherDisplay.init();
+	});
+</script>
+
+</body>
+</html>

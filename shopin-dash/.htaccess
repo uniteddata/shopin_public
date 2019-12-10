@@ -1,0 +1,5 @@
+AuthName "This site is protected with a password"
+AuthUserFile /home/ubuntu/front-end/unity-dash/.htpasswd
+AuthGroupFile /dev/null
+AuthType Basic
+require valid-user

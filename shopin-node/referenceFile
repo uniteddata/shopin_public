@@ -1,0 +1,1004 @@
+import * as kadence from "@kadenceproject/kadence/index.js";
+import levelup from "levelup";
+import encoding from "encoding-down";
+import memdown from "memdown";
+import bunyan from "bunyan";
+import config from "../config";
+import fs from "fs";
+import express from "express";
+import bodyParser from "body-parser";
+import EthCrypto from "eth-crypto";
+import updateContactList from "../updateContacts";
+import cors from "cors";
+import uuid from "uuid/v4";
+const app = express();
+
+const storage = levelup(encoding(memdown()));
+const logger = bunyan.createLogger({ name: "main" });
+const transport = new kadence.UDPTransport();
+
+const ethIdentitiy = EthCrypto.createIdentity();
+const id = process.env.IS_PRIMARY
+  ? config.primaryNodeAddress
+  : ethIdentitiy.address.substring(2);
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// FILE READING
+
+function initializeNode(){
+    return new Promise((resolve, reject) => {
+        setTimeout(
+            function startWithThis() {
+              let filename = "./ip.txt";
+              let ipAddress;
+              return fs.readFile(filename, "utf8", function(err, data) {
+                if (err) throw err;
+                ipAddress = data.replace(/(\r\n\t|\n|\r\t)/gm, "");
+                if (!process.env.IS_PRIMARY) {
+                  console.log(
+                    "Master node: " +
+                      process.env.IS_MASTER +
+                      "\nPrimary Node's Port:" +
+                      process.env.PORT_OF_PRIMARY_NODE +
+                      "\nThis node's port: " +
+                      process.env.PORT
+                  );
+                }
+          
+                const node = new kadence.KademliaNode({
+                  identity: id,
+                  contact: {
+                    hostname: ipAddress,
+                    port: process.env.IS_PRIMARY
+                      ? process.env.PORT_OF_PRIMARY_NODE
+                      : process.env.PORT,
+                    publicKey: ethIdentitiy.publicKey,
+                    isMaster: process.env.IS_MASTER ? process.env.IS_MASTER : false,
+                    isPrimary: process.env.IS_PRIMARY ? process.env.IS_PRIMARY : false,
+                    balance: process.env.BALANCE,
+                    clients: [],
+                    failTransactions: [],
+                    successfulTransactions: []
+                  },
+                  transport: transport,
+                  storage: storage,
+                  logger: logger
+                });
+          
+                node.listen(node.contact.port, node.contact.hostname);
+          
+                node.quasar = node.plugin(kadence.quasar());
+          
+                let _walletSeeds = JSON.parse(
+                  fs.readFileSync(process.cwd() + "/src/seed.json", "utf8")
+                );
+                node.iterativeStore(
+                  ethIdentitiy.address.substring(2),
+                  _walletSeeds,
+                  function(_err, _data) {
+                    if (err) {
+                    }
+                  }
+                );
+          
+                // const plugin = kadence.rolodex("./rolodex")(node);
+                // middleware
+                node.use((request, response, next) => {
+                  // console.log(request)
+                  if (process.env.IS_PRIMARY) {
+                    if (request.method === "FIND_NODE") {
+                      node.join([request.identity, request.contact], () => {});
+                      // }
+                    }
+                  }
+          
+                  if (
+                    request.method === "PUBLISH" &&
+                    request.params.topic === "UPDATE_CONTACT_LIST"
+                  ) {
+                    node._updateContact(
+                      request.params.contents.identity,
+                      request.params.contents.contact
+                    );
+                  }
+          
+                  next();
+                });
+          
+                // API
+          
+                // gives the nodes information which are connected to this node
+                app.get("/node/information", (req, res) => {
+                  res.send({
+                    status: "success",
+                    data: {
+                      current: node.contact,
+                      contacts: node.router.allBuckets
+                    }
+                  });
+                });
+          
+                // gives details of own node
+                app.get("/node/balance", (req, res) => {
+                  let result = {
+                    host: node.contact.hostname,
+                    port: node.contact.port,
+                    publicKey: node.contact.publicKey,
+                    balance: node.contact.balance
+                  };
+                  res.send({
+                    status: "success",
+                    data: result
+                  });
+                });
+          
+                // transaction (node to node)
+                // transfer coin
+                // e.g.
+                // publicKey : ''
+                // balance : 10
+                //
+                app.post("/transaction/transfer", (req, res) => {
+                  console.log(
+                    req.body,
+                    node.contact.balance,
+                    req.body.balance > node.contact.balance
+                  );
+          
+                  let transactionWallet = EthCrypto.createIdentity();
+          
+                  // node cannot send coin to itself
+                  if (req.body.address === node.identity.toString("hex")) {
+                    res.send({
+                      status: "error",
+                      message: "Node cannot send coin to itself"
+                    });
+                  }
+          
+                  // process if contact found
+          
+                  let _contact = req.body;
+                  let isCountFound = false;
+          
+                  // fetching _to node identity
+                  node.router.allBuckets.length > 0
+                    ? node.router.allBuckets.forEach(async otherNode => {
+                        // searching exact node from routing table
+                        if (_contact.address == otherNode.identity.toString("hex")) {
+                          isCountFound = true;
+          
+                          const message = req.body.balance;
+                          delete req.body.balance;
+                          const messageHash = EthCrypto.hash.keccak256(message);
+                          const signature = EthCrypto.sign(
+                            transactionWallet.privateKey, // privateKey
+                            messageHash // hash of message
+                          );
+          
+                          const payload = {
+                            message,
+                            signature
+                          };
+          
+                          // encryption using receiver node public key
+                          const encrypted = await EthCrypto.encryptWithPublicKey(
+                            transactionWallet.publicKey,
+                            JSON.stringify(payload)
+                          );
+                          const encryptedString = EthCrypto.cipher.stringify(encrypted);
+                          req.body.encryptedData = encryptedString;
+                          req.body.privateKey = transactionWallet.privateKey;
+                          req.body.publicKey = transactionWallet.publicKey;
+          
+                          console.log(req.body);
+          
+                          // initiate transaction _to node
+                          node.send(
+                            "VERIFY_TRANSACTION",
+                            req.body,
+                            [otherNode.identity, otherNode.contact],
+                            (error, result) => {
+                              if (!result.contact || result.code === 404) {
+                                // add key in contact in case of fail transaction
+                                node.contact.failTransactions.push(result.key);
+                                let latestContact = {
+                                  identity: node.identity.toString("hex"),
+                                  contact: node.contact
+                                };
+                                updateContactList(latestContact, node);
+                                res.send(result);
+                              } else {
+                                //   if (otherNode.contact.isMaster != "true") {
+                                //     let _otherNodeContact = otherNode.contact;
+                                //     _otherNodeContact.balance =
+                                //       Number(_otherNodeContact.balance) +
+                                //       Number(req.body.balance);
+                                //     // update balance in routing table
+                                //     node._updateContact(
+                                //       otherNode.identity,
+                                //       _otherNodeContact
+                                //     );
+                                //     node.contact.balance = result.contact.balance;
+                                //     let updatedContact = [
+                                //       result,
+                                //       {
+                                //         contact: _otherNodeContact,
+                                //         identity: otherNode.identity
+                                //       }
+                                //     ];
+                                //     updatedContact.forEach(latestContact => {
+                                //         updateContactList(latestContact, node);
+                                //       });
+                                //     const encryptedObject = EthCrypto.cipher.parse(
+                                //       encryptedString
+                                //     );
+                                //     let key = kadence.utils.getRandomKeyString();
+                                //     // store hash of transaction in all node
+                                //     node.iterativeStore(key, encryptedObject, function(
+                                //       err,
+                                //       totalStored
+                                //     ) {
+                                //     });
+                                //     node.contact.successfulTransactions.push(key);
+                                //     let latestContact = {
+                                //         identity: node.identity.toString("hex"),
+                                //         contact: node.contact
+                                //       }
+                                //       updateContactList(latestContact, node);
+                                //     // send updated balance info in response
+                                //     res.send({
+                                //       status: "success",
+                                //       message: "balance has been transfered.",
+                                //       data: {
+                                //         sender: result.contact,
+                                //         receiver: _otherNodeContact
+                                //       }
+                                //     });
+                                //   } else {
+                                //     const encryptedObject = EthCrypto.cipher.parse(
+                                //       encryptedString
+                                //     );
+                                //     let key = kadence.utils.getRandomKeyString();
+                                //     node.iterativeStore(key, encryptedObject, function(
+                                //       err,
+                                //       totalStored
+                                //     ) {
+                                //     });
+                                //     node.contact.failTransactions.push(key);
+                                //     let latestContact = {
+                                //         identity: node.identity.toString("hex"),
+                                //         contact: node.contact
+                                //       }
+                                //       updateContactList(latestContact, node);
+                                //     // give error if receiver will be master
+                                //     res.send({
+                                //       status: "error",
+                                //       message: "This is master node.",
+                                //       key
+                                //     });
+                                //   }
+                              }
+                            }
+                          );
+                        }
+                      })
+                    : ""; //
+                  if (!isCountFound) {
+                    res.send({
+                      status: "error",
+                      message: "No contact found."
+                    });
+                  }
+                  // }
+                });
+          
+                // add client in user contact
+          
+                app.post("/node/add-client", (req, res) => {
+                  // const users = req.body.clients;
+          
+                  // if (users) {
+                  //   // console.log(user, node.contact)
+                  //   // const clientIdentity = EthCrypto.createIdentity();
+          
+                  //   // let client = {
+                  //   //   identity: clientIdentity.address.substring(2),
+                  //   //   nodeId: node.contact.identity,
+                  //   //   name: user.client_name,
+                  //   //   balance: user.balance,
+                  //   //   publicKey: clientIdentity.publicKey,
+                  //   //   privateKey: clientIdentity.privateKey
+                  //   // };
+          
+                  //   node.contact.clients = users;
+                  //   let latestContact = {
+                  //     identity: node.identity.toString("hex"),
+                  //     contact: node.contact
+                  //   };
+          
+                  //   updateContactList(latestContact, node);
+                  //   let newContact = Object.assign({}, node.contact);
+                  //   newContact.clients.forEach(client => {
+                  //     delete client.privateKey;
+                  //   });
+          
+                  let key = "73F453CdeeDdf9eDCE8435F1b64222aeD3A51C32";
+          
+                  node.iterativeStore(
+                    Buffer.from(key, "hex"),
+                    req.body.clients,
+                    (error, response) => {
+                      console.log(error, response, "res");
+                      res.send({
+                        status: "success",
+                        message: "client added successfully",
+                        data: key
+                      });
+                    }
+                  );
+          
+                  // }
+                });
+          
+                // get clients of node
+          
+                app.get("/node/clients", (req, res) => {
+                  res.send({
+                    status: "success",
+                    data: {
+                      clients: node.contact.clients.filter(client => {
+                        delete client.privateKey;
+                        return client;
+                      })
+                    }
+                  });
+                });
+          
+                app.post("/transaction/transfer/client", (req, res) => {
+                  const senderAddress = req.body.from.address;
+                  const receiverAddress = req.body.to.address;
+          
+                  let clientContacts = node.contact.clients.find(
+                    client => client.identity === senderAddress
+                  );
+          
+                  let transactionWallet = EthCrypto.createIdentity();
+                  // process if contact found
+          
+                  // if(clientContacts){
+                  let targetNode = req.body.to.address;
+                  let isCountFound = false;
+          
+                  // fetching _to node identity
+                  node.router.allBuckets.length > 0
+                    ? node.router.allBuckets.forEach(async otherNode => {
+                        let receiverContact = {};
+                        otherNode.contact.clients.length > 0 &&
+                          otherNode.contact.clients.forEach(receiverNode => {
+                            if (receiverNode.identity === receiverAddress) {
+                              receiverContact.receiverNodeIdentity = otherNode.identity;
+                              receiverContact.receiverNodeContact = otherNode.contact;
+                              receiverContact.receiverClient = receiverAddress;
+                            }
+                          });
+          
+                        const message = req.body.balance;
+                        const messageHash = EthCrypto.hash.keccak256(message);
+                        const signature = EthCrypto.sign(
+                          transactionWallet.privateKey, // privateKey
+                          messageHash // hash of message
+                        );
+          
+                        const payload = {
+                          message,
+                          signature
+                        };
+                        const encrypted = await EthCrypto.encryptWithPublicKey(
+                          transactionWallet.publicKey,
+                          JSON.stringify(payload)
+                        );
+                        const encryptedString = EthCrypto.cipher.stringify(encrypted);
+                        req.body.encryptedData = encryptedString;
+                        req.body.privateKey = transactionWallet.privateKey;
+                        req.body.publicKey = transactionWallet.publicKey;
+                        req.body.sender = senderAddress;
+                        req.body.senderIdentity = node.identity.toString("hex");
+                        req.body.receiver = receiverContact;
+                        req.body.for = "client";
+          
+                        // searching exact node from routing table
+                        // if (targetNode == otherNode.identity.toString("hex")) {
+                        // isCountFound = true;
+                        // initiate transaction _to node
+                        node.send(
+                          "VERIFY_TRANSACTION",
+                          req.body,
+                          [
+                            receiverContact.receiverNodeIdentity,
+                            receiverContact.receiverNodeContact
+                          ],
+                          (error, result) => {
+                            console.log(error, result, "error");
+                            if (result && (!result.contact || result.code === 404)) {
+                              // add key in contact in case of fail transaction
+                              if (result.code === 404) {
+                                node.contact.failTransactions.push(result.key);
+                              } else {
+                                node.contact.successfulTransactions.push(result.key);
+                              }
+                              // let latestContact = {
+                              //   identity: node.identity.toString("hex"),
+                              //   contact: node.contact
+                              // }
+                              // updateContactList(latestContact, node);
+                              res.send(result);
+                            }
+          
+                            //   if (!result.contact) {
+          
+                            //     // push key in contact if case of fail transaction
+                            //     node.contact.failTransactions.push(result.key);
+                            //     let latestContact = {
+                            //       identity: node.identity.toString("hex"),
+                            //       contact: node.contact
+                            //     }
+                            //     updateContactList(latestContact, node);
+                            //     res.send(result);
+                            //   } else {
+          
+                            //     // check if receiver node is master or not
+                            //     if (otherNode.contact.isMaster != "true") {
+                            //       let _otherNodeContact = otherNode.contact;
+                            //       _otherNodeContact.balance =
+                            //         Number(_otherNodeContact.balance) +
+                            //         Number(req.body.message);
+          
+                            //       // update balance in routing table
+                            //       node._updateContact(
+                            //         otherNode.identity,
+                            //         _otherNodeContact
+                            //       );
+          
+                            //       node.contact = result.contact;
+          
+                            //       // both node which are going to update at all places
+                            //       let updatedContact = [
+                            //         result,
+                            //         {
+                            //           contact: _otherNodeContact,
+                            //           identity: otherNode.identity
+                            //         }
+                            //       ];
+          
+                            //       updatedContact.forEach(latestContact => {
+                            //         updateContactList(latestContact, node);
+                            //       });
+          
+                            //       // encrypted hash which will store at successful transaction
+                            //       const encryptedObject = EthCrypto.cipher.parse(
+                            //         encryptedString
+                            //       );
+          
+                            //       let key = kadence.utils.getRandomKeyString();
+          
+                            //       // store at every node which are connected with this node
+                            //       node.iterativeStore(key, encryptedObject, function(
+                            //         err,
+                            //         totalStored
+                            //       ) {
+                            //       });
+          
+                            //       // push key of stored hash in contact
+                            //       node.contact.successfulTransactions.push(key);
+                            //       let latestContact = {
+                            //         identity: node.identity.toString("hex"),
+                            //         contact: node.contact
+                            //       }
+                            //       updateContactList(latestContact, node);
+          
+                            //       // send updated balance info in response
+                            //       res.send({
+                            //         status: "success",
+                            //         message: "balance has been transfered.",
+                            //         data: {
+                            //           sender: result.contact,
+                            //           receiver: _otherNodeContact
+                            //         }
+                            //       });
+                            //     } else {
+                            //       const encryptedObject = EthCrypto.cipher.parse(
+                            //         encryptedString
+                            //       );
+          
+                            //       let key = kadence.utils.getRandomKeyString();
+          
+                            //       node.iterativeStore(key, encryptedObject, function(
+                            //         err,
+                            //         totalStored
+                            //       ) {
+                            //       });
+          
+                            //       node.contact.failTransactions.push(key);
+                            //       let latestContact = {
+                            //         identity: node.identity.toString("hex"),
+                            //         contact: node.contact
+                            //       }
+                            //       updateContactList(latestContact, node);
+                            //       // give error if receiver will be master
+                            //       res.send({
+                            //         status: "error",
+                            //         message: "This is master node.",
+                            //         key
+                            //       });
+                            //     }
+                            //   }
+                            // }
+                            // }
+                          }
+                        );
+                      })
+                    : ""; //
+                  // if (!isCountFound) {
+                  //   res.send({
+                  //     status: "error",
+                  //     message: "No contact found."
+                  //   });
+                  // }
+                  // } else {
+                  //     res.send({
+                  //             status: "error",
+                  //             message: "contact not found"
+                  //           });
+                  // }
+                });
+          
+                // get stored data by key
+                // node/data?key=
+                app.get("/node/data", (req, response) => {
+                  node.iterativeFindValue(Buffer.from(req.query.key, "hex"), function(
+                    err,
+                    result
+                  ) {
+                    response.send({
+                      status: "success",
+                      data: result
+                    });
+                  });
+                });
+          
+                app.post("/check/signature", (req, response) => {
+                  const message = req.body.balance;
+                  const messageHash = EthCrypto.hash.keccak256(message);
+          
+                  const signature = EthCrypto.sign(
+                    req.body.privateKey, // privateKey
+                    messageHash // hash of message
+                  );
+                  console.log(signature);
+                  response.send({
+                    status: "success",
+                    data: signature
+                  });
+                });
+          
+           
+          
+                app.get("/wallets", (req, res) => {
+                  node.iterativeFindValue(ethIdentitiy.address.substring(2), function(
+                    _err,
+                    _data
+                  ) {
+                    res.send({
+                      status: "success",
+                      data: _data.value
+                    });
+                  });
+                });
+          
+                app.listen(process.env.API_PORT);
+          
+                node.use("CONTACT_LIST", (req, res, next) => {
+                  if (process.env.IS_PRIMARY) {
+                    let masters = 0;
+          
+                    logger.info(`Connected  ${node.router.size} peers!`);
+          
+                    console.log();
+                    console.log("------------- CURRENT NODES OF NETWORKS----------->");
+                    console.log("  ");
+          
+                    node.router.allBuckets.length > 0 && node.router.allBuckets.length > 0
+                      ? node.router.allBuckets.forEach(val => {
+                          if (val.contact.isMaster === "true") {
+                            masters++;
+                          }
+          
+                          // );
+                        })
+                      : "";
+                    console.log(node.router.allBuckets, masters);
+                    console.log("  ");
+                    console.log("<------------------------------------------------");
+                    console.log(" ");
+          
+                    console.log(
+                      "There is " +
+                        masters +
+                        " master nodes in network from " +
+                        node.router.size +
+                        " total nodes."
+                    );
+                    node.router.addContactByNodeId(request.contact[1]);
+                  } else {
+                    let masters = 0;
+          
+                    logger.info(`Connected  ${node.router.size} peers!`);
+          
+                    console.log();
+                    console.log("------------- CURRENT NODES OF NETWORKS----------->");
+                    console.log("  ");
+          
+                    req.params.length > 0
+                      ? req.params.forEach(val => {
+                          if (val.contact.isMaster === "true") {
+                            masters++;
+                          }
+          
+                          // );
+                        })
+                      : "";
+                    console.log("  ");
+                    console.log("<------------------------------------------------");
+                    console.log(" ");
+                    console.log(
+                      "There is " +
+                        masters +
+                        " master nodes in network from " +
+                        node.router.size +
+                        " total nodes."
+                    );
+                  }
+                  next();
+                });
+          
+                node.use("SEND_TRANSACTION_TO_MASTER", async (req, res, next) => {
+                  let key = kadence.utils.getRandomKeyString();
+          
+                  const encryptedObject = EthCrypto.cipher.parse(
+                    req.params.encryptedData
+                  );
+          
+                  const decrypted = await EthCrypto.decryptWithPrivateKey(
+                    req.params.privateKey,
+                    encryptedObject
+                  );
+                  const decryptedPayload = JSON.parse(decrypted);
+          
+                  let senderClientBalance;
+                  let senderNodeContact = {};
+                  let receiverNodeContact = {};
+                  let receiverWallet, senderWallet;
+                  if (req.params.for) {
+                    node.router.allBuckets && node.router.allBuckets.length > 0
+                      ? node.router.allBuckets.forEach(val => {
+                          if (val.identity == req.params.receiver.receiverNodeIdentity) {
+                            val.contact.clients.length > 0 &&
+                              val.contact.clients.forEach(receiverNode => {
+                                if (req.params.to.address == receiverNode.identity) {
+                                  receiverNodeContact = val;
+                                  receiverWallet = receiverNode;
+                                }
+                              });
+                          }
+          
+                          if (val.identity == req.params.senderIdentity) {
+                            val.contact.clients.length > 0 &&
+                              val.contact.clients.forEach(senderNode => {
+                                if (req.params.from.address == senderNode.identity) {
+                                  senderNodeContact = val;
+                                  senderClientBalance = senderNode.balance;
+                                  senderWallet = senderNode;
+                                }
+                              });
+                          }
+          
+                          //  }
+                        })
+                      : "";
+          
+                    if (decryptedPayload.message > parseInt(senderClientBalance)) {
+                      node.iterativeStore(key, encryptedObject, function(
+                        err,
+                        totalStored
+                      ) {});
+          
+                      res.send({
+                        status: "error",
+                        message: "requested client doesn't have enough balance",
+                        key
+                      });
+                    } else {
+                      senderWallet.balance =
+                        Number(senderWallet.balance) - Number(decryptedPayload.message);
+                      receiverWallet.balance =
+                        Number(receiverWallet.balance) + Number(decryptedPayload.message);
+          
+                      senderNodeContact.contact.clients &&
+                        senderNodeContact.contact.clients.length > 0 &&
+                        senderNodeContact.contact.clients.forEach((wallet, index) => {
+                          if (wallet.identity == senderWallet.identity) {
+                            senderNodeContact.contact.clients[index] = senderWallet;
+                          }
+                        });
+          
+                      receiverNodeContact.contact.clients &&
+                        receiverNodeContact.contact.clients.length > 0 &&
+                        receiverNodeContact.contact.clients.forEach((wallet, index) => {
+                          if (wallet.identity == receiverWallet.identity) {
+                            receiverNodeContact.contact.clients[index] = receiverWallet;
+                          }
+                        });
+          
+                      let updateContacts = [
+                        {
+                          contact: senderNodeContact.contact,
+                          identity: senderNodeContact.identity
+                        },
+                        {
+                          contact: receiverNodeContact.contact,
+                          identity: receiverNodeContact.identity
+                        }
+                      ];
+          
+                      updateContacts.forEach(latestContact => {
+                        updateContactList(latestContact, node);
+                      });
+          
+                      node.iterativeStore(key, encryptedObject, function(
+                        err,
+                        totalStored
+                      ) {});
+          
+                      res.send({
+                        status: "success",
+                        message: "Transaction Succeed",
+                        key
+                      });
+                    }
+                  } else {
+                    node.router.allBuckets && node.router.allBuckets.length > 0
+                      ? node.router.allBuckets.forEach(val => {
+                          // searching exact node from routing table
+                          if (req.params.sender == val.identity.toString("hex")) {
+                            if (
+                              decryptedPayload.message > parseInt(val.contact.balance)
+                            ) {
+                              node.iterativeStore(key, encryptedObject, function(
+                                err,
+                                totalStored
+                              ) {});
+          
+                              res.send({
+                                status: "error",
+                                message: "requested client doesn't have enough balance",
+                                key
+                              });
+                            } else {
+                              val.contact.balance =
+                                Number(val.contact.balance) -
+                                Number(decryptedPayload.message);
+                              req.contact[1].balance =
+                                Number(val.contact.balance) +
+                                Number(decryptedPayload.message);
+          
+                              let updateContacts = [
+                                {
+                                  contact: val.contact,
+                                  identity: val.identity
+                                },
+                                {
+                                  contact: req.contact[1],
+                                  identity: req.contact[0]
+                                }
+                              ];
+          
+                              updateContacts.forEach(latestContact => {
+                                updateContactList(latestContact, node);
+                              });
+          
+                              node.iterativeStore(key, encryptedObject, function(
+                                err,
+                                totalStored
+                              ) {
+                                console.log(totalStored, "data stored");
+                              });
+          
+                              res.send({
+                                status: "success",
+                                message: "Transaction Succeed",
+                                key
+                              });
+                            }
+                          }
+                        })
+                      : "";
+                  }
+          
+                  // if(senderAddress){
+          
+                  // // }
+                  // // else {
+                  // //   res.send({
+                  // //     status: "error",
+                  // //     message: "Receiver is not verified."
+                  // //   });
+                  // }
+                });
+          
+                node.use("VERIFY_TRANSACTION", async (req, res, next) => {
+                  //
+                  console.log("Processing transaction");
+          
+                  const encryptedObject = EthCrypto.cipher.parse(
+                    req.params.encryptedData
+                  );
+          
+                  const decrypted = await EthCrypto.decryptWithPrivateKey(
+                    req.params.privateKey,
+                    encryptedObject
+                  );
+          
+                  const decryptedPayload = JSON.parse(decrypted);
+          
+                  console.log(
+                    decryptedPayload.message > parseInt(req.contact[1].balance)
+                      ? "-----------not a valid transaction------------"
+                      : ""
+                  );
+          
+                  let masters = [];
+                  node.router.allBuckets && node.router.allBuckets.length > 0
+                    ? node.router.allBuckets.forEach(val => {
+                        if (val.contact.isMaster === "true") {
+                          masters.push(val);
+                        }
+                      })
+                    : "";
+          
+                  if (!masters.length) {
+                    let key = kadence.utils.getRandomKeyString();
+          
+                    node.iterativeStore(key, encryptedObject, function(err, totalStored) {
+                      console.log(totalStored, "data stored");
+                    });
+          
+                    res.send({
+                      status: "error",
+                      code: 404,
+                      message: "No master node found",
+                      key
+                    });
+                  } else {
+                    let masterNode = masters[Math.floor(Math.random() * masters.length)];
+                    req.params.sender = req.params.for
+                      ? req.params.sender
+                      : req.contact[0];
+          
+                    node.send(
+                      "SEND_TRANSACTION_TO_MASTER",
+                      req.params,
+                      [masterNode.identity, masterNode.contact],
+                      (error, result) => {
+                        if (!result.contact) {
+                          res.send(result);
+                        }
+                      }
+                    );
+                  }
+          
+                  //   if (req.params.for !== "client") {
+                  //     req.contact[1].balance =
+                  //       Number(req.contact[1].balance) -
+                  //       Number(decryptedPayload.message);
+                  //   } else {
+                  //     req.contact[1].clients.length > 0
+                  //       ? req.contact[1].clients.forEach(requestedClient => {
+                  //           if (requestedClient.identity === req.params.from.address) {
+                  //             requestedClient.balance =
+                  //               Number(requestedClient.balance) -
+                  //               Number(decryptedPayload.message);
+                  //           }
+                  //         })
+                  //       : "";
+                  //   }
+          
+                  //   node.router.removeContactByNodeId(req.contact[0]);
+                  //   node.router.addContactByNodeId(req.contact[0], req.contact[1]);
+          
+                  //   node.contact.balance =
+                  //     Number(node.contact.balance) + Number(decryptedPayload.message);
+          
+                  //   res.send({
+                  //     contact: req.contact[1],
+                  //     identity: req.contact[0]
+                  //   });
+                  // }
+                  // }
+                  // else {
+                  //   res.send({
+                  //     status: "error",
+                  //     message: "Receiver is not verified."
+                  //   });
+                  // }
+                });
+          
+                node.use("ECHO", (req, res, next) => {
+                  console.log("------------- MESSAGE----------->");
+                  console.log("  ");
+          
+                  console.log(
+                    "Got message : " + req.params.message + " \nfrom : " + req.contact[0]
+                  );
+                  console.log("  ");
+                  console.log("<------------------------------------------------");
+          
+                  res.send(node.router.allBuckets);
+                });
+          
+                node.sendNeighborEcho = (neighbor, text, callback) => {
+                  node.send("ECHO", { message: text }, neighbor, callback);
+                };
+          
+                node.use("STORE", (request, response, next) => {
+                  // console.log(request, "store");
+                  // let [key, entry] = request.params;
+                  // let hash = crypto
+                  //   .createHash("rmd160")
+                  //   .update(entry.value)
+                  //   .digest("hex");
+                  // // Ensure values are content-addressable
+                  // if (key !== hash) {
+                  //   return next(new Error("Key must be the RMD-160 hash of value"));
+                  // }
+                });
+          
+                if (!process.env.IS_PRIMARY) {
+                  node.join([config.primaryNodeAddress, config.contact], () => {
+                    node.sendNeighborEcho(
+                      [config.primaryNodeAddress, config.contact],
+                      "Hello",
+                      (err, res) => {
+                        res.forEach(response => {
+                          let nodesToSave = Object.values(response).reverse();
+                          node.router.addContactByNodeId(nodesToSave);
+                          node.send(
+                            "CONTACT_LIST",
+                            res,
+                            [config.primaryNodeAddress, config.contact],
+                            () => {}
+                          );
+                          node.send(
+                            "CONTACT_LIST",
+                            res,
+                            [nodesToSave[0], nodesToSave[1]],
+                            () => {}
+                          );
+                        });
+                      }
+                    );
+                  });
+                }
+              resolve({
+                  node,
+                  ethIdentitiy
+              })
+              });
+            },
+            process.env.IS_PRIMARY ? 500 : 10000
+          );
+    })
+}
+
+module.exports = initializeNode;
