@@ -124,3 +124,31 @@ In order for this process to be carried out, nodes engage in a Distributed Key G
 * Leader generates master BLS signature key
 * Publish transaction to all nodes
 * Each node has generated their BLS signature key
+
+
+## Update 1.1: ERC-20 token utility
+
+* Shopin-node:
+We have setup 21 nodes network using the Open Source Kadence DHT library.
+Each node is connected to each other via routing tables.
+Each of the DHT nodes store a random configuration of 200 transacting accounts with different account balances, which are used during the simulations. 
+We generate a signature for each transaction using clients private key.
+When we make a single transaction, the node responsible for processing the transaction will verify the signature first.
+If the signature of the client verifies, the DHT node will fetch its list of clients and check their balance and state.
+This transaction proposing DHT node will update the balance and store using iterativeStore method.
+The iterativeStore method will store transactions at the neighbours of the proposer node.
+Once it stores, neighbour nodes send their response back to the proposer.
+For running simulations, we have setup the number of transactions that are triggered according to the number of tokens sent to the white listed wallets provided. Transactions are randomized to be sent by different DHT nodes. 
+
+* Listen-for-ERC20:
+This is a stand alone service which is continuously listening for token transfers on a Shopin Smart Contract 
+We are filtering transaction based on receiving addresses. If someone is sending SHOP tokens to one of the following addresses, the service will send a particular signal to our network to run the same number of simulation based on number of tokens sent to a given Shopin address. 
+When this service detects any transaction, it will also store the transaction data in a mongoDb database, so token history can be maintained.
+If the simulation is pending for particular token transaction then it'll show that the transactions are pending in the Dashboard.
+
+
+* Shopin-dash:
+Shopin dashboard is connected to one of the 21 nodes to accumulate transaction data and simulate communications between the nodes. 
+It is showing real time simulations with the token sending address identified. 
+Dashboard is also showing the updated list of clients and token history
+
