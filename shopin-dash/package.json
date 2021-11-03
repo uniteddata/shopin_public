@@ -47,7 +47,7 @@
     "redux": "^4.0.1",
     "simple-line-icons": "^2.4.1",
     "socket.io-client": "^2.2.0",
-    "validator": "^10.9.0"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "axios": "^0.18.0",
